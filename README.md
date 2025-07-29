@@ -105,8 +105,15 @@ python tracking/train.py --logdir=tracking_training --name=industrial_no_balanci
 ```
 
 ## Publication
-The corresponding publication is available at [https://arxiv.org/abs/2203.01968](https://arxiv.org/abs/2203.01968).
-
+Further details can be found in the following [publication](https://arxiv.org/abs/2203.01968):
+```
+  title={Learning Time-optimized Path Tracking with or without Sensory Feedback}, 
+  booktitle={2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  author={Kiemel, Jonas and Kröger, Torsten},
+  year={2022},
+  pages={4024-4031},
+  doi={10.1109/IROS47612.2022.9982053}
+```
 [![Video](https://user-images.githubusercontent.com/51738372/157881536-77e4dd68-71ed-4074-bec7-88925e946455.png)](https://youtu.be/gCPN8mqPVHg)
 
 
