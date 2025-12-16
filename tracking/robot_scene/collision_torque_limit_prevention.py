@@ -142,6 +142,10 @@ class ObstacleWrapperBase:
             self._starting_point_cartesian_range = [[-0.6, 0.6], [-0.8, 0.8],
                                                     [0.1, 1]]  # [[x_min, x_max], [y_min, y_max], [z_min, z_max]]
             self._target_point_relative_pos_min_max = np.array([[-1.6, -2, -1.5], [1.6, 2, 1.5]])
+        elif self._robot_scene.robot_name == "ur10":
+            # Conservative workspace for UR10 (can be tuned)
+            self._starting_point_cartesian_range = [[-0.7, 0.7], [-0.7, 0.7], [0.1, 1.2]]
+            self._target_point_relative_pos_min_max = np.array([[-1.5, -1.5, -1.5], [1.5, 1.5, 1.5]])
         elif self._robot_scene.robot_name.startswith("armar6"):
             if self._robot_scene.robot_name == "armar6":
                 self._starting_point_cartesian_range = [[-0.1, 0.75], [-1.1, 1.1],
@@ -425,6 +429,12 @@ class ObstacleWrapperSim(ObstacleWrapperBase):
 
         visual_shape_data = p.getVisualShapeData(self._robot_scene.robot_id,
                                                  flags=p.VISUAL_SHAPE_DATA_TEXTURE_UNIQUE_IDS)
+        # Build a safe lookup for default colors by link index (some links may have no visual mesh)
+        visual_color_by_link = {}
+        for vs in visual_shape_data:
+            # vs: (linkIndex, shapeIndex, ... , rgbaColor)
+            if len(vs) > 7:
+                visual_color_by_link[vs[1]] = vs[7]
         visualize_target_link_point = False  # bounding sphere around the target link point
 
         for i in range(len(link_name_list)):
@@ -436,8 +446,8 @@ class ObstacleWrapperSim(ObstacleWrapperBase):
             else:
                 closest_point_active = False
 
-            # link default color
-            default_color = visual_shape_data[i][7]
+            # link default color (fallback if visual missing)
+            default_color = visual_color_by_link.get(i, [0.7, 0.7, 0.7, 1.0])
 
             if self._use_target_points or self._use_splines:
                 for j in range(self._robot_scene.num_robots):

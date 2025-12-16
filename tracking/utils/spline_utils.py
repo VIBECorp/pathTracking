@@ -448,7 +448,8 @@ class Spline:
                         raise
 
         with open(path, 'w') as f:
-            f.write(json.dumps(spline_dict))
+            # Use sort_keys=True to match the format of sample files
+            f.write(json.dumps(spline_dict, sort_keys=True))
             f.flush()
 
     def visualize(self, env, sample_distance=None, use_normalized_sample_distance=True,

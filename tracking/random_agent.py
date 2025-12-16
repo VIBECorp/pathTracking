@@ -38,7 +38,8 @@ def store_env_config(eval_dir, env_config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_gui', action='store_true', default=False)
-    parser.add_argument('--robot_scene', type=int, default=0)
+    # robot_scene: 8 -> UR10 (6 DOF)
+    parser.add_argument('--robot_scene', type=int, default=8)
     parser.add_argument('--obstacle_scene', type=int, default=None)
     parser.add_argument('--activate_obstacle_collisions', action='store_true', default=False)
     parser.add_argument('--no_self_collision', action='store_true', default=False)
@@ -161,6 +162,8 @@ if __name__ == '__main__':
         num_joints = 18
     elif robot_scene == 7:  # armar 4 with fixed hands
         num_joints = 30
+    elif robot_scene == 8:  # UR10 (6 DOF)
+        num_joints = 6
     else:
         raise ValueError("robot_scene " + str(robot_scene) + " not defined")
 
@@ -240,19 +243,16 @@ if __name__ == '__main__':
 
     if robot_scene < 3:
         target_link_name = "iiwa_link_7"
-        # name of the target link for target point reaching
         target_link_offset = [0, 0, 0.126]
-        # relative offset between the frame of the target link and the target link point
     elif robot_scene < 6:
         target_link_name = "hand_fixed"
-        # name of the target link for target point reaching
         target_link_offset = [0.03, 0, 0.135]
-        # relative offset between the frame of the target link and the target link point
+    elif robot_scene == 8:
+        target_link_name = "wrist_3_link"
+        target_link_offset = [0, 0, 0]
     else:
         target_link_name = "arm_wri2"
-        # name of the target link for target point reaching
         target_link_offset = [0.165, 0.003, 0.00]
-        # relative offset between the frame of the target link and the target link point
 
     if args.target_point_cartesian_range_scene is None:
         target_point_cartesian_range_scene = robot_scene

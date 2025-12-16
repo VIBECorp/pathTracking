@@ -825,14 +825,20 @@ class TrackingBase(gym.Env):
 
             actual_position = None
 
+            # Always get actual position in simulation when storing trajectory
             if (not self._use_movement_thread_or_process and not self._obstacle_use_computed_actual_values) or \
-                    use_actual_positions_for_action_spline:
+                    use_actual_positions_for_action_spline or \
+                    (self._store_trajectory and not self._use_real_robot):
                 actual_position, actual_velocity = self._robot_scene.get_actual_joint_position_and_velocity()
 
                 if self._store_trajectory or use_actual_positions_for_action_spline:
-                    actual_acceleration = (actual_velocity - np.array(
-                        self._get_measured_actual_trajectory_control_point(-1, key='velocities'))) / \
-                                          self._simulation_time_step
+                    if len(self._trajectory_manager.measured_actual_trajectory_control_points['positions']) > 0:
+                        actual_acceleration = (actual_velocity - np.array(
+                            self._get_measured_actual_trajectory_control_point(-1, key='velocities'))) / \
+                                              self._simulation_time_step
+                    else:
+                        # First point: acceleration is zero
+                        actual_acceleration = np.zeros_like(actual_velocity)
                     self._add_measured_actual_trajectory_control_point(actual_position, actual_velocity,
                                                                        actual_acceleration)
 
@@ -975,14 +981,29 @@ class TrackingBase(gym.Env):
             f.flush()
 
     def _store_trajectory_data(self):
-        trajectory_dict = {'actions': np.asarray(self._action_list).tolist(),
-                           'trajectory_setpoints': self._to_list(
-                               self._trajectory_manager.generated_trajectory_control_points),
-                           'trajectory_measured_actual_values': self._to_list(
-                               self._trajectory_manager.measured_actual_trajectory_control_points),
-                           'trajectory_computed_actual_values': self._to_list(
-                               self._trajectory_manager.computed_actual_trajectory_control_points),
-                           }
+        trajectory_dict = {
+            'episode_counter': self._episode_counter,
+            'pid': self.pid,
+            'trajectory_time_step': self._trajectory_time_step,
+            'simulation_time_step': self._simulation_time_step,
+            'control_time_step': self._control_time_step,
+            'episode_length': self._episode_length,
+            'actions': np.asarray(self._action_list).tolist(),
+            'trajectory_setpoints': self._to_list(
+                self._trajectory_manager.generated_trajectory_control_points),
+            'trajectory_measured_actual_values': self._to_list(
+                self._trajectory_manager.measured_actual_trajectory_control_points),
+            'trajectory_computed_actual_values': self._to_list(
+                self._trajectory_manager.computed_actual_trajectory_control_points),
+        }
+        
+        # Add reference spline info if available
+        if self._use_splines and self._trajectory_manager.reference_spline is not None:
+            trajectory_dict['reference_spline_name'] = self._trajectory_manager.spline_name
+            trajectory_dict['reference_spline_start_dis'] = float(self._trajectory_manager.reference_spline.start_dis)
+            trajectory_dict['reference_spline_end_dis'] = float(self._trajectory_manager.reference_spline.end_dis)
+            trajectory_dict['reference_spline_length'] = float(self._trajectory_manager.reference_spline.get_length())
+        
         eval_dir = os.path.join(self._evaluation_dir, "trajectory_data")
 
         if not os.path.exists(eval_dir):
@@ -992,9 +1013,12 @@ class TrackingBase(gym.Env):
                 if exc.errno != errno.EEXIST:
                     raise
 
-        with open(os.path.join(eval_dir, "episode_{}_{}.json".format(self._episode_counter, self.pid)), 'w') as f:
-            f.write(json.dumps(trajectory_dict))
+        trajectory_file = os.path.join(eval_dir, "episode_{}_{}.json".format(self._episode_counter, self.pid))
+        with open(trajectory_file, 'w') as f:
+            f.write(json.dumps(trajectory_dict, indent=2))
             f.flush()
+        
+        logging.info("Trajectory saved to: {}".format(trajectory_file))
 
     def close(self):
         self._robot_scene.disconnect()

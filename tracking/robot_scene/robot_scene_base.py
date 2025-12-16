@@ -21,6 +21,9 @@ class RobotSceneBase(object):
     JOINT_LIMITS_SAFETY_BUFFER_ARMAR = 0
     MAX_ACCELERATION_IIWA = [15.0, 7.5, 10.0, 12.5, 15.0, 20.0, 20.0]
     MAX_JERK_IIWA = [7500, 3750, 5000, 6250, 7500, 10000, 10000]
+    # UR10: moderate default limits (rad/s^2, rad/s^3) – adjust if real data available
+    MAX_ACCELERATION_UR10 = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
+    MAX_JERK_UR10 = [600, 600, 600, 600, 600, 600]
     # Armar 6: torso (1 prismatic joint [0]) + one arm (8 revolute joints [1:9] from arm_cla_joint to arm_t8_joint)
     MAX_ACCELERATION_ARMAR6 = [15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0]  # 9 joints
     MAX_JERK_ARMAR6 = [7500, 7500, 7500, 7500, 7500, 7500, 7500, 7500, 7500]
@@ -126,6 +129,13 @@ class RobotSceneBase(object):
             plane_z_offset = -0.94
             self._robot_name = "iiwa7"
 
+        # UR10
+        if robot_scene == 8:
+            self._num_robots = 1
+            plane_z_offset = 0
+            self._robot_name = "ur10"
+            robot_urdf = "ur10"
+
         if robot_scene == 3 or robot_scene == 4:
             self._num_robots = 2
             plane_z_offset = 0
@@ -158,6 +168,8 @@ class RobotSceneBase(object):
         if target_link_name is None:
             if self._robot_name == "iiwa7":
                 target_link_name = "iiwa_link_7"
+            elif self._robot_name == "ur10":
+                target_link_name = "wrist_3_link"
             elif self._robot_name.startswith("armar6"):
                 target_link_name = "hand_fixed"
             elif self._robot_name.startswith("armar4"):
@@ -166,6 +178,8 @@ class RobotSceneBase(object):
         if target_link_offset is None:
             if self._robot_name == "iiwa7":
                 target_link_offset = [0, 0, 0.126]
+            elif self._robot_name == "ur10":
+                target_link_offset = [0, 0, 0]
             elif self._robot_name.startswith("armar6"):
                 target_link_offset = [0.03, 0, 0.135]
             elif self._robot_name.startswith("armar4"):
@@ -248,6 +262,9 @@ class RobotSceneBase(object):
         if self._robot_name == "iiwa7":
             self._initial_max_accelerations = np.array(self.MAX_ACCELERATION_IIWA * self._num_robots)
             self._initial_max_jerk = np.array(self.MAX_JERK_IIWA * self._num_robots)
+        if self._robot_name == "ur10":
+            self._initial_max_accelerations = np.array(self.MAX_ACCELERATION_UR10 * self._num_robots)
+            self._initial_max_jerk = np.array(self.MAX_JERK_UR10 * self._num_robots)
         if self._robot_name.startswith("armar6"):
             self._initial_max_accelerations = np.array(self.MAX_ACCELERATION_ARMAR6[0:1] +
                                                        self.MAX_ACCELERATION_ARMAR6[1:9] * self._num_robots)
@@ -538,6 +555,16 @@ class RobotSceneBase(object):
         if self._robot_name == "iiwa7":
             deactivate_self_collision_detection_link_name_pair_list = []
             deactivate_self_collision_detection_link_name_pair_list_per_robot = [["iiwa_link_5", "iiwa_link_7"]]
+        elif self._robot_name == "ur10":
+            # Deactivate adjacent-link collisions for UR10 (conservative)
+            deactivate_self_collision_detection_link_name_pair_list = []
+            deactivate_self_collision_detection_link_name_pair_list_per_robot = [
+                ["shoulder_link", "upper_arm_link"],
+                ["upper_arm_link", "forearm_link"],
+                ["forearm_link", "wrist_1_link"],
+                ["wrist_1_link", "wrist_2_link"],
+                ["wrist_2_link", "wrist_3_link"],
+            ]
         elif self._robot_name.startswith("armar6"):
             deactivate_self_collision_detection_link_name_pair_list = []
             deactivate_self_collision_detection_link_name_pair_list_per_robot = [["lower_neck", "arm_cla"],

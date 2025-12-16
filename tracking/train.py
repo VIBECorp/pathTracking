@@ -347,7 +347,8 @@ if __name__ == '__main__':
     parser.add_argument('--use_target_points', action='store_true', default=False)
     parser.add_argument('--acc_limit_factor_braking', type=float, default=1.0)
     parser.add_argument('--jerk_limit_factor_braking', type=float, default=1.0)
-    parser.add_argument('--robot_scene', type=int, default=0)
+    # robot_scene: 8 -> UR10 (6 DOF)
+    parser.add_argument('--robot_scene', type=int, default=8)
     parser.add_argument('--num_virtual_motors', type=int, default=0)
     parser.add_argument('--no_self_collision', action='store_true', default=False)
     parser.add_argument('--terminate_on_robot_stop', action='store_true', default=False)
@@ -358,7 +359,8 @@ if __name__ == '__main__':
     parser.add_argument('--target_point_sequence', type=int, default=0)
     parser.add_argument('--target_point_reached_reward_bonus', type=float, default=0.00)
     parser.add_argument('--target_point_use_actual_position', action='store_true', default=False)
-    parser.add_argument('--target_link_offset', type=json.loads, default='[0, 0, 0.126]')
+    # UR10 uses tool0; default offset 0
+    parser.add_argument('--target_link_offset', type=json.loads, default='[0, 0, 0]')
     parser.add_argument('--target_point_reward_factor', type=float, default=1.0)
     parser.add_argument('--normalize_reward_to_initial_target_point_distance', action='store_true', default=False)
     # spline settings
